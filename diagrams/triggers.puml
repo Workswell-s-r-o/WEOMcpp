@@ -1,0 +1,73 @@
+@startuml
+title "How Triggers Work (e.g., resetCore)"
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+
+actor User
+participant "properties: PropertiesWtc640" as Props
+participant "exclusiveTx: ConnectionExclusiveTransactionWtc640" as Tx
+participant "device: DeviceInterfaceWtc640" as Device
+actor Firmware
+
+autonumber
+
+User -> Props: resetCore(progressController)
+activate Props
+
+Props -> Props: createConnectionExclusiveTransactionWtc640(false)
+note right: An exclusive transaction is required
+
+Props -> Tx: <<create>>
+activate Tx
+
+Props -> Tx: activateResetTriggerAndWaitTillFinished(trigger) // e.g., trigger = SOFTWARE_RESET
+
+Tx -> Device: writeData(trigger_address, trigger_mask)
+activate Device
+note right of Tx
+  A specific value (the mask) is written
+  to a specific memory address to tell
+  the firmware what to do.
+  (Conceptual representation)
+end note
+
+Device -> Firmware: Signal: Execute Trigger
+deactivate Device
+activate Firmware
+
+Tx -> Tx: waitTillTriggerFinished(trigger)
+loop while trigger bit is active in status register
+    Tx -> Device: readData(status_address)
+    activate Device
+    Device --> Tx: status_value
+    deactivate Device
+    note right of Tx
+      The code polls a status register
+      to see if the firmware has finished.
+      (Conceptual representation)
+    end note
+    ... 50ms delay ...
+end
+
+Firmware -> Firmware: Perform requested action...
+
+Firmware -> Device: Firmware writes to STATUS register
+note left of Firmware
+  Firmware clears the trigger bit
+  in the status register upon completion.
+end note
+deactivate Firmware
+
+Tx -> Device: readData(status_address)
+activate Device
+Device --> Tx: status_value (trigger bit is now clear)
+deactivate Device
+
+Tx --> Props: return
+deactivate Tx
+
+Props --> User: return
+deactivate Props
+
+@enduml

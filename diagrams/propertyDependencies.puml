@@ -1,0 +1,37 @@
+@startuml
+title "Focus Property Dependencies"
+
+!theme vibrant
+
+cloud "Source Property" as Source {
+    object "FOCUS_TYPE_CURRENT" as FocusType
+}
+
+package "Motoric Focus Properties" {
+    object "MOTOR_FOCUS_MODE" as MotorMode
+    object "TARGET_MF_POSITION" as TargetPos
+    object "MAXIMAL_MF_POSITION" as MaxPos
+}
+
+package "Bayonet Properties" {
+    object "LENS_SERIAL_NUMBER" as LensSerial
+    object "LENS_ARTICLE_NUMBER" as LensArticle
+}
+
+object "CURRENT_MF_POSITION" as CurrentPos
+
+FocusType --> MotorMode : "enables if motoric"
+FocusType --> TargetPos : "enables if motoric"
+FocusType --> MaxPos : "enables if motoric"
+FocusType --> CurrentPos : "enables if motoric"
+
+FocusType --> LensSerial : "enables if bayonet"
+FocusType --> LensArticle : "enables if bayonet"
+
+note bottom of FocusType
+  This property acts as a switch.
+  Its value determines which other
+  properties are enabled or disabled.
+end note
+
+@enduml

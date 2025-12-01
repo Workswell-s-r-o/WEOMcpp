@@ -1,0 +1,88 @@
+@startuml
+title "Example.cpp: A Possible Sequence of Events"
+
+participant "mainThread" as Main
+participant "videoThread" as Video
+participant "properties: PropertiesWtc640" as Props
+participant "m_outerTransactionMutex" as Mutex
+
+autonumber
+
+note over Main, Video
+  Initial setup from run():
+  Connect to device and start video stream.
+end note
+
+loop while m_keepRunning (videoThread's continuous loop)
+
+    Video -> Video: sleep 500ms
+    ...
+
+    == At this moment, mainThread acquires the lock ==
+    Main -> Props: createConnectionExclusiveTransactionWtc640(false)
+    activate Props
+    Props -> Mutex: lock()
+    activate Mutex
+    Mutex -> Props: lock acquired
+    deactivate Mutex
+    Props -> Main: exclusiveTx
+    deactivate Props
+    note right of Main #LightBlue: Holds exclusive lock for 1s
+
+    ... 500ms later, videoThread continues ...
+
+    Video -> Video: sleep 500ms
+    ...
+    alt tryCreatePropertiesTransaction (fails this iteration)
+        Video -> Props: tryCreatePropertiesTransaction(1ms)
+        activate Props
+        Props -> Mutex: try_lock_for(1ms)
+        activate Mutex
+        note right of Mutex #FFCC66
+            **BLOCKED**
+            Mutex is held by mainThread.
+        end note
+        ... 1ms timeout ...
+        Mutex -> Props: lock failed (timeout)
+        deactivate Mutex
+        Props -> Video: null
+        deactivate Props
+        Video -> Video: log "Failed to create transaction"
+    end
+
+    == mainThread's 1s sleep ends, and it releases the lock ==
+    Main -> Props: (exclusiveTx goes out of scope)
+    activate Props
+    Props -> Mutex: unlock()
+    activate Mutex
+    Mutex -> Props: lock released
+    deactivate Mutex
+    deactivate Props
+
+    ... 500ms later, videoThread continues ...
+
+    Video -> Video: sleep 500ms
+    ...
+    alt tryCreatePropertiesTransaction (succeeds this iteration)
+        Video -> Props: tryCreatePropertiesTransaction(1ms)
+        activate Props
+        Props -> Mutex: try_lock_for(1ms)
+        activate Mutex
+        Mutex -> Props: lock acquired
+        deactivate Mutex
+        Props -> Video: propertiesTx
+        deactivate Props
+        Video -> Video: Read shutter temperature
+
+        Video -> Props: (propertiesTx goes out of scope)
+        activate Props
+        Props -> Mutex: unlock()
+        activate Mutex
+        Mutex -> Props: lock released
+        deactivate Mutex
+        deactivate Props
+    end
+
+end
+
+@enduml
