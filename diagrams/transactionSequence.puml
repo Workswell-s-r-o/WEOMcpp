@@ -1,0 +1,56 @@
+@startuml
+title "Transaction Locking Sequence"
+
+actor User1
+actor User2
+participant "properties: PropertiesWtc640" as props
+participant "m_outerTransactionMutex" as mutex
+
+== User 1 acquires lock and creates transaction ==
+
+User1 -> props: createConnectionExclusiveTransaction()
+activate props
+props -> mutex: lock()
+activate mutex
+mutex --> props: lock acquired
+deactivate mutex
+props --> User1: tx1 created
+deactivate props
+
+... 50 ms later: tx1 is in use ...
+
+== User 2 attempts to create a transaction ==
+
+User2 -> props: createConnectionExclusiveTransaction()
+activate props
+props -> mutex: lock()
+activate mutex
+note right of mutex #FFCC66
+  **BLOCKED**
+  The mutex is already locked by the
+  active transaction from User 1.
+  This call will not return until
+  the mutex is unlocked.
+end note
+
+... 100 ms later: User 1's transaction finishes ...
+
+== User 1's transaction is destroyed, releasing the lock ==
+
+User1 -> props: (tx1 goes out of scope)
+activate props
+props -> mutex: unlock()
+activate mutex
+mutex --> props: lock released
+deactivate mutex
+deactivate props
+
+== User 2's blocked call now acquires the lock ==
+
+mutex --> props: lock acquired
+deactivate mutex
+
+props --> User2: tx2 created
+deactivate props
+
+@enduml

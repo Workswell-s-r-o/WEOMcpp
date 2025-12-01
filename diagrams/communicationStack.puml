@@ -1,0 +1,54 @@
+@startuml
+title "Communication Stack"
+
+!theme vibrant
+
+package "Application Layer" {
+  actor User
+}
+
+package "Library Public API" {
+  [properties: PropertiesWtc640] as Props
+}
+
+package "Internal Communication Layers" {
+  [device: DeviceInterfaceWtc640] as Device
+  [protocol: ProtocolInterfaceTCSI] as Protocol
+  interface IDataLinkInterface as DLI
+  [uart: DataLinkUart] as Uart
+}
+
+package "Hardware" {
+    [Physical Device] as HW
+}
+
+
+User -down-> Props : Interacts with
+Props -down-> Device : Uses
+Device -down-> Protocol : Uses
+Protocol -down-> DLI : Uses
+
+DLI <|.. Uart : Implements
+Uart -down-> HW : Communicates with
+
+note right of Props
+  The main entry point for the user.
+  Translates high-level property
+  operations into device commands.
+end note
+
+note right of Device
+  Device-specific logic for the WTC640.
+end note
+
+note right of Protocol
+  Implements the TCSI protocol
+  for packet-based communication.
+end note
+
+note right of Uart
+  A concrete implementation that
+  sends data over a serial (UART) port.
+end note
+
+@enduml

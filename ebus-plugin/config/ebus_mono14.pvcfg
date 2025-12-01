@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<puregevpersistencefile version="1.0">
+  <device name="" version="1.0">
+    <device>
+      <parameter name="DeviceStreamChannelEndianness">Little</parameter>
+      <parameter name="Width">640</parameter>
+      <parameter name="Height">480</parameter>
+      <parameter name="OffsetX">0</parameter>
+      <parameter name="OffsetY">0</parameter>
+      <parameter name="PixelFormat">Mono14</parameter>
+      <parameter name="TestPattern">Off</parameter>
+      <parameter name="AcquisitionMode">Continuous</parameter>
+      <parameter name="AcquisitionFrameCount">1</parameter>
+      <parameter name="AcquisitionFrameToSkip">0</parameter>
+    </device>
+  </device>
+</puregevpersistencefile>

@@ -1,0 +1,91 @@
+@startuml
+title "Property System Architecture (weomcpp_user branch)"
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' Abstract base classes and interfaces
+interface PropertyAdapterBase {
+  + getAddressRanges(): AddressRanges
+  + getSourcePropertyIds(): set<PropertyId>
+}
+
+class PropertyAdapterValue<T> extends PropertyAdapterBase {
+  ' Generic adapter for a property of type T
+}
+
+' Concrete Adapter Implementations
+class PropertyAdapterValueDeviceSimple<T> extends PropertyAdapterValue<T> {
+  ' Reads/writes a simple value from/to a device memory address.
+}
+
+class PropertyAdapterValueDerivedFrom1<T, S1> extends PropertyAdapterValue<T> {
+  ' Value is calculated from one source property.
+}
+
+class PropertyAdapterValueDeviceComposite<T, ...> extends PropertyAdapterValueDeviceSimple<T> {
+  ' Represents a composite value (like a struct) made of multiple components.
+}
+
+class PropertyAdapterValueComponent<T, Composite> extends PropertyAdapterValue<T> {
+  ' Represents a single component of a composite value.
+}
+
+' Core Classes
+class Properties {
+  # getPropertyAdapters(): map<PropertyId, PropertyAdapterBase>
+  # getPropertyValues(): PropertyValues
+}
+
+class PropertiesWtc640 extends Properties {
+  + createAdapters()
+  - addCoreSerialNumberAdapters()
+  - addConbrightAdapters()
+  - addGeneralAdapters()
+  ' ... etc ...
+}
+
+class PropertyValues {
+  + getValue(PropertyId): OptionalResult
+  + setValue(PropertyId, value): VoidResult
+}
+
+' Relationships
+Properties "1" *-- "many" PropertyAdapterBase : holds adapters
+Properties "1" *-- "1" PropertyValues : holds values
+
+PropertiesWtc640 .> PropertyAdapterValueDeviceSimple : creates
+PropertiesWtc640 .> PropertyAdapterValueDerivedFrom1 : creates
+PropertiesWtc640 .> PropertyAdapterValueDeviceComposite : creates
+
+PropertyAdapterValueDerivedFrom1 ..> PropertyAdapterBase : depends on source
+PropertyAdapterValueDeviceComposite "1" o-- "*" PropertyAdapterValueComponent : has components
+
+' Explanatory Notes with Examples
+note as N_Simple
+  <b>Example: Simple Property</b>
+  The `FPGA_BOARD_TEMPERATURE` property is a direct reading
+  from a memory address on the device.
+  It is managed by a `PropertyAdapterValueDeviceSimple`.
+end note
+PropertyAdapterValueDeviceSimple .. N_Simple
+
+note as N_Composite
+  <b>Example: Composite Property (Conbright)</b>
+  The `MGC_CONTRAST_BRIGHTNESS_CURRENT` property holds a `Conbright` struct.
+  It is managed by a `PropertyAdapterValueDeviceComposite`.
+
+  Its individual fields, `MGC_CONTRAST_CURRENT` and `MGC_BRIGHTNESS_CURRENT`,
+  are exposed through `PropertyAdapterValueComponent` adapters.
+end note
+PropertyAdapterValueDeviceComposite .. N_Composite
+
+note as N_Derived
+  <b>Example: Derived Property (Production Date)</b>
+  The `PRODUCTION_DATE` property is calculated from the
+  value of the `SERIAL_NUMBER_CURRENT` property.
+  It is managed by a `PropertyAdapterValueDerivedFrom1`.
+end note
+PropertyAdapterValueDerivedFrom1 .. N_Derived
+
+@enduml

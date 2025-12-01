@@ -1,0 +1,63 @@
+@startuml
+title "Transaction Class Diagram"
+
+' skinparam to make the diagram more readable
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class PropertiesWtc640 {
+  - m_outerTransactionMutex: DeadlockDetectionMutex
+  + createConnectionInfoTransaction(): ConnectionInfoTransaction
+  + createConnectionStateTransaction(): ConnectionStateTransaction
+  + createConnectionExclusiveTransactionWtc640(cancelRunningTasks: bool): ConnectionExclusiveTransactionWtc640
+  + createPropertiesTransaction(): PropertiesTransaction
+}
+
+note right of PropertiesWtc640::m_outerTransactionMutex
+  This mutex ensures that only one "outer" transaction
+  (ConnectionExclusive,ConnectionState or PropertiesTransaction) can be active at a time.
+  When a transaction is created, it **locks** this mutex.
+  When the transaction is destroyed, it **unlocks** the mutex.
+end note
+
+class ITaskManager {
+  + blockAddingTasksAndWait(): void
+  + unblockAddingTasks(): void
+  + blockRunningTasksAndWait(cancelRunningTasks: bool): void
+  + unblockRunningTasks(): void
+}
+
+class PropertiesTransaction {
+  + getValue<T>(propertyId): ValueResult<T>
+  + setValue<T>(propertyId, value): VoidResult
+  + refreshValue(propertyId): void
+  + resetValue(propertyId): void
+  + touch(propertyId): void
+  + getLifetimeChecker(): LifetimeChecker
+}
+
+class ConnectionExclusiveTransactionWtc640 {
+}
+
+class ConnectionStateTransaction {
+}
+
+PropertiesWtc640 ..> ConnectionExclusiveTransactionWtc640 : creates
+PropertiesWtc640 ..> ConnectionStateTransaction : creates
+PropertiesWtc640 ..> PropertiesTransaction : creates
+PropertiesWtc640 o-- ITaskManager
+
+ConnectionExclusiveTransactionWtc640 o-- PropertiesTransaction
+ConnectionExclusiveTransactionWtc640 ..> ITaskManager : uses
+
+ConnectionStateTransaction ..> PropertiesWtc640 : uses
+
+note bottom of ConnectionExclusiveTransactionWtc640
+  The `cancelRunningTasks` parameter determines
+  if currently running tasks should be cancelled.
+  If true, any ongoing operations are aborted.
+  If false, the transaction will wait for them to complete
+  before acquiring the lock.
+end note
+
+@enduml
