@@ -27,7 +27,6 @@ set(SOURCES
     source/propertyidwtc640.cpp
     source/videoformatadapter.cpp
     source/palettesmanager.cpp
-    
 )
 
 
@@ -55,7 +54,7 @@ if (W_BUILD_DEPENDENCIES_WITH_CONAN)
 else ()
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(libzip REQUIRED IMPORTED_TARGET libzip)
-    target_link_libraries(Core PUBLIC PkgConfig::libzip)
+    target_link_libraries(WTC640 PRIVATE PkgConfig::libzip)
 endif()
 
 

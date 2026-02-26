@@ -83,6 +83,37 @@ private:
     uint32_t m_value {0};
 };
 
+class AuxilaryPinTriggerMode
+{
+public:
+    enum class Item
+    {
+        INTERNAL_TRIGGER,
+        EXTERNAL_CONTINUOUS_TRIGGER,
+        EXTERNAL_ONE_SHOT_TRIGGER,
+    };
+
+    static constexpr uint32_t MASK = 0b11;
+    static const std::map<Item, EnumValueDeviceDescription> ALL_ITEMS;
+};
+
+class AuxilaryPinTriggerState
+{
+public:
+    enum class Item
+    {
+        HIGH_IMPEDANCE,
+        HIGH_LOGIC_LEVEL,
+        LOW_LOGIC_LEVEL,
+        INTERNAL_TRIGGER_OUTPUT,
+        EXTERNAL_TRIGGER_INPUT,
+        NUC_OFFSET_UPDATE_TRIGGER_OUTPUT,
+        NUC_OFFSET_UPDATE_REQUEST_INPUT,
+    };
+
+    static constexpr uint32_t MASK = 0b111;
+    static const std::map<Item, EnumValueDeviceDescription> ALL_ITEMS;
+};
 
 class BaudrateWtc
 {
@@ -189,13 +220,12 @@ class Plugin
 public:
     enum class Item : int
     {
-        CMOS,
         HDMI,
-        ANALOG,
+        WTVC,
         USB,
         PLEORA,
         CVBS,
-        ONVIF
+        CMOS,
     };
     static constexpr uint32_t MASK = 0b1111;
     static const std::map<Item, EnumValueDeviceDescription> ALL_ITEMS;
@@ -307,8 +337,13 @@ public:
         WTC_7_5,
         WTC_50,
         WTC_7,
-        USER_1,
-        USER_2,
+        WTC_73,
+        WTC_13,
+        WTC_19,
+        WTC_60,
+        WTC_100,
+        WTC_35_105,
+        WTC_50_150,
     };
 
     struct Description final : EnumValueDeviceDescription
@@ -321,8 +356,6 @@ public:
 
     static uint32_t getDeviceValue(const Item item);
     static ValueResult<Item> getFromDeviceValue(const uint32_t deviceValue);
-
-    static bool isUserDefined(Item item);
 };
 
 class LensVariant final
@@ -360,6 +393,22 @@ public:
 
     static uint32_t getDeviceValue(const Item item);
     static ValueResult<Item> getFromDeviceValue(const uint32_t deviceValue);
+};
+
+class OnucState final
+{
+    OnucState() = default;
+public:
+    enum class Item : uint8_t
+    {
+        OFF,
+        ONUC,
+        SNUC,
+        AUTO_DETECT,
+    };
+
+    static constexpr uint32_t MASK = 0b11;
+    static const std::map<Item, EnumValueDeviceDescription> ALL_ITEMS;
 };
 
 class SensorCint

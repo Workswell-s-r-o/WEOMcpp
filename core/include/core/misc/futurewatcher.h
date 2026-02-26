@@ -10,49 +10,23 @@
 
 namespace core
 {
-
-/**
- * @brief An interface for watching a future.
- */
-class IFutureWatcher
-{
-public:
-    /**
-     * @brief Default constructor.
-     */
-    explicit IFutureWatcher(){};
-
-    /**
-     * @brief A signal that is emitted when the future has started.
-     */
-    boost::signals2::signal<void()> started;
-    /**
-     * @brief A signal that is emitted when the future has finished.
-     */
-    boost::signals2::signal<void()> finished;
-};
-
-
 /**
  * @brief A class for watching a future with a result.
  * @tparam ResultType The type of the result.
  */
 template<class ResultType>
-class FutureResultWatcherImpl : public IFutureWatcher
+class FutureWatcher final
 {
-    using BaseClass = IFutureWatcher;
-
-protected:
+public:
     /**
      * @brief Default constructor.
      */
-    explicit FutureResultWatcherImpl();
+    explicit FutureWatcher() = default;
 
-public:
     /**
      * @brief Default destructor.
      */
-    virtual ~FutureResultWatcherImpl();
+    ~FutureWatcher();
 
     /**
      * @brief Sets the future to watch.
@@ -65,11 +39,23 @@ public:
      * @return True if the future is being waited for, false otherwise.
      */
     bool isWaiting() const;
+
     /**
      * @brief Gets the result of the future.
      * @return The result of the future.
      */
     const ResultType& getResult();
+
+public:
+    /**
+     * @brief A signal that is emitted when the future has started.
+     */
+    boost::signals2::signal<void()> started;
+
+    /**
+     * @brief A signal that is emitted when the future has finished.
+     */
+    boost::signals2::signal<void()> finished;
 
 private:
     struct FutureData
@@ -80,7 +66,7 @@ private:
         DeadlockDetectionMutex mutex;
     };
 
-    std::shared_ptr<FutureData> m_futureData;
+    std::shared_ptr<FutureData> m_futureData = std::make_shared<FutureData>();
 };
 
 
@@ -89,43 +75,12 @@ private:
  * @tparam TypeName The type of the value.
  */
 template<class TypeName>
-class FutureResultWatcher : public FutureResultWatcherImpl<ValueResult<TypeName>>
-{
-    using BaseClass = FutureResultWatcherImpl<ValueResult<TypeName>>;
-
-public:
-    /**
-     * @brief Default constructor.
-     */
-    explicit FutureResultWatcher();
-};
-
-
-/**
- * @brief A class for watching a future with a void result.
- */
-template<>
-class FutureResultWatcher<void> : public FutureResultWatcherImpl<VoidResult>
-{
-    using BaseClass = FutureResultWatcherImpl<VoidResult>;
-
-public:
-    /**
-     * @brief Default constructor.
-     */
-    explicit FutureResultWatcher();
-};
+using FutureResultWatcher = FutureWatcher<std::conditional_t<std::is_void_v<TypeName>, VoidResult, ValueResult<TypeName>>>;
 
 // Impl
 
 template<class ResultType>
-FutureResultWatcherImpl<ResultType>::FutureResultWatcherImpl() :
-    m_futureData(std::make_shared<FutureData>())
-{
-}
-
-template<class ResultType>
-FutureResultWatcherImpl<ResultType>::~FutureResultWatcherImpl()
+FutureWatcher<ResultType>::~FutureWatcher()
 {
     const std::scoped_lock lock(m_futureData->mutex);
 
@@ -133,7 +88,7 @@ FutureResultWatcherImpl<ResultType>::~FutureResultWatcherImpl()
 }
 
 template<class ResultType>
-void FutureResultWatcherImpl<ResultType>::setFuture(std::future<ResultType>&& future)
+void FutureWatcher<ResultType>::setFuture(std::future<ResultType>&& future)
 {
     std::thread waitingThread;
 
@@ -183,7 +138,7 @@ void FutureResultWatcherImpl<ResultType>::setFuture(std::future<ResultType>&& fu
 }
 
 template<class ResultType>
-bool FutureResultWatcherImpl<ResultType>::isWaiting() const
+bool FutureWatcher<ResultType>::isWaiting() const
 {
     const std::scoped_lock lock(m_futureData->mutex);
 
@@ -191,22 +146,12 @@ bool FutureResultWatcherImpl<ResultType>::isWaiting() const
 }
 
 template<class ResultType>
-const ResultType& FutureResultWatcherImpl<ResultType>::getResult()
+const ResultType& FutureWatcher<ResultType>::getResult()
 {
     const std::scoped_lock lock(m_futureData->mutex);
 
     return m_futureData->result;
 }
-
-template<class TypeName>
-FutureResultWatcher<TypeName>::FutureResultWatcher()
-{
-}
-
-inline FutureResultWatcher<void>::FutureResultWatcher()
-{
-}
-
 } // namespace core
 
 #endif // CORE_FUTUREWATCHER_H

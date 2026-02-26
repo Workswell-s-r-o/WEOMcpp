@@ -15,6 +15,7 @@ set(HEADERS
     include/core/connection/stats.h
     include/core/connection/status.h
     include/core/connection/tcsipacket.h
+    include/core/connection/serialportenumerator.h
 
     include/core/misc/buffereddatareader.h
     include/core/misc/conversions.h
@@ -109,6 +110,13 @@ else()
     list(APPEND SOURCES source/properties/valueadapterusbstringdescriptordummy.cpp)
 endif()
 
+if(WIN32)
+    list(APPEND SOURCES source/connection/serialportenumeratorwin.cpp)
+elseif(UNIX OR APPLE)
+    list(APPEND SOURCES source/connection/serialportenumeratorlinux.cpp)
+else()
+    list(APPEND SOURCES source/connection/serialportenumeratordummy.cpp)
+endif()
 
 add_library(Core STATIC
     ${HEADERS}
@@ -131,6 +139,14 @@ add_library(Core STATIC
     include/core/connection/serialportinfo.h
     include/core/misc/imainthreadindicator.h
 )
+
+if(UNIX OR APPLE)
+    if(NOT CMAKE_CROSSCOMPILING)
+        find_package(PkgConfig REQUIRED)
+		pkg_check_modules(LIBUDEV REQUIRED libudev)
+		target_link_libraries(Core PRIVATE ${LIBUDEV_LIBRARIES})
+    endif()
+endif()
 
 target_compile_features(Core PUBLIC cxx_std_20)
 set_property(TARGET Core PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -180,6 +196,7 @@ elseif(UNIX OR APPLE)
             find_package(libusb REQUIRED)
             target_link_libraries(Core PRIVATE libusb::libusb)
         else()
+            find_package(PkgConfig REQUIRED)
             pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
             target_link_libraries(Core PRIVATE ${LIBUSB_LIBRARIES})
         endif()

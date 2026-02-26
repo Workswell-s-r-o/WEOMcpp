@@ -22,6 +22,7 @@ struct ResultDeviceInfo : core::ResultSpecificInfo
         ACCESS_DENIED,    // transmission ok, but device refused - you have insufficient credentials => try again with appropriate credentials
         INVALID_DATA,     // transmission ok, but device refused - invalid data sent into device => try again with different data
         INVALID_SETTINGS, // transmission ok, but device refused - valid data sent, but some value setting(s) prevents the operation => try change configuration
+        USER_CANCELLED,   // operation cancelled by user
     };
 
     constexpr ~ResultDeviceInfo() override {}
@@ -35,6 +36,7 @@ struct ResultDeviceInfo : core::ResultSpecificInfo
             case Error::NO_RESPONSE:
             case Error::TRANSMISSION_FAILED:
             case Error::DEVICE_IS_BUSY:
+            case Error::USER_CANCELLED:
                 return true;
 
             default:
@@ -52,6 +54,7 @@ constexpr ResultDeviceInfo INFO_DEVICE_IS_BUSY      {ResultDeviceInfo::Error::DE
 constexpr ResultDeviceInfo INFO_ACCESS_DENIED       {ResultDeviceInfo::Error::ACCESS_DENIED};
 constexpr ResultDeviceInfo INFO_INVALID_DATA        {ResultDeviceInfo::Error::INVALID_DATA};
 constexpr ResultDeviceInfo INFO_INVALID_SETTINGS    {ResultDeviceInfo::Error::INVALID_SETTINGS};
+constexpr ResultDeviceInfo INFO_USER_CANCELLED      {ResultDeviceInfo::Error::USER_CANCELLED};
 
 } // namespace connection
 

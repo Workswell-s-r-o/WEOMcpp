@@ -20,15 +20,7 @@ void replaceNext(std::ostringstream& oss, const std::string& formatString, size_
     oss.write(formatString.data() + lastPos, pos - lastPos);
 
     oss << value;
-    //surely there is a better way of doing the line below?
-    oss << std::dec;
     lastPos = pos + 2;
-}
-
-// Overload for handling stream manipulators like std::hex, std::dec, etc.
-inline void replaceNext(std::ostringstream& oss, const std::string&, size_t&, std::ios_base& (&fmt)(std::ios_base&))
-{
-    oss << fmt;  // Apply the formatting manipulator
 }
 
 // Recursive helper function to process all arguments

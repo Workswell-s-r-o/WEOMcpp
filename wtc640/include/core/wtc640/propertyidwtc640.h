@@ -3,15 +3,12 @@
 
 #include "core/properties/propertyid.h"
 
-#include <array>
-
-
 namespace core
 {
 
-class PropertyIdWtc640
+class PropertyIdWtc640 final
 {
-    PropertyIdWtc640();
+    PropertyIdWtc640() = default;
 
 public:
 
@@ -54,6 +51,15 @@ public:
     static const PropertyId LED_G_BRIGHTNESS_IN_FLASH;
     static const PropertyId LED_B_BRIGHTNESS_IN_FLASH;
 
+    static const PropertyId AUXILARY_TRIGGER_MODE_CURRENT;
+    static const PropertyId AUXILARY_TRIGGER_PIN_0_CURRENT;
+    static const PropertyId AUXILARY_TRIGGER_PIN_1_CURRENT;
+    static const PropertyId AUXILARY_TRIGGER_PIN_2_CURRENT;
+    static const PropertyId AUXILARY_TRIGGER_MODE_IN_FLASH;
+    static const PropertyId AUXILARY_TRIGGER_PIN_0_IN_FLASH;
+    static const PropertyId AUXILARY_TRIGGER_PIN_1_IN_FLASH;
+    static const PropertyId AUXILARY_TRIGGER_PIN_2_IN_FLASH;
+
     // Video
     static const PropertyId PALETTE_INDEX_CURRENT;
     static const PropertyId PALETTE_INDEX_IN_FLASH;
@@ -63,6 +69,11 @@ public:
 
     static const PropertyId VIDEO_FORMAT_CURRENT;
     static const PropertyId VIDEO_FORMAT_IN_FLASH;
+
+    static const PropertyId VIDEO_STANDARD_HDMI_CURRENT;
+    static const PropertyId VIDEO_STANDARD_HDMI_IN_FLASH;
+    static const PropertyId VIDEO_STANDARD_CVBS_CURRENT;
+    static const PropertyId VIDEO_STANDARD_CVBS_IN_FLASH;
 
     static const PropertyId IMAGE_FLIP_CURRENT;
         static const PropertyId FLIP_IMAGE_VERTICALLY_CURRENT;
@@ -184,6 +195,7 @@ public:
     static const PropertyId RETICLE_SHIFT_X_AXIS_IN_FLASH;
     static const PropertyId RETICLE_SHIFT_Y_AXIS_CURRENT;
     static const PropertyId RETICLE_SHIFT_Y_AXIS_IN_FLASH;
+    static bool isAlloweByVersion(PropertyId property, Version mainVersion);
 };
 
 } // namespace core

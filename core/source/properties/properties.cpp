@@ -807,6 +807,11 @@ void Properties::PropertiesTransaction::invalidateValue(PropertyId propertyId) c
     derefPtr(getPropertyAdapter(propertyId)).invalidateValue(getValuesTransaction());
 }
 
+void Properties::PropertiesTransaction::refreshStatus(PropertyId propertyId) const
+{
+     derefPtr(getPropertyAdapter(propertyId)).updateStatusValueChanged(getValuesTransaction());
+}
+
 bool Properties::PropertiesTransaction::hasValueResult(PropertyId propertyId) const
 {
     return getValuesTransaction().hasValueResult(propertyId);

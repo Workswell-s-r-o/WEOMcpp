@@ -248,7 +248,7 @@ VoidResult DeviceInterfaceWtc640::readDataImpl(std::span<uint8_t> data, uint32_t
 
             if (progress.advanceByIsCancelled(addressRange.getSize()))
             {
-                return VoidResult::createError(READ_ERROR, "User cancelled");
+                return VoidResult::createError(READ_ERROR, "User cancelled", &INFO_USER_CANCELLED);
             }
         }
         else

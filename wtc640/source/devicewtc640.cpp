@@ -121,6 +121,25 @@ std::string StatusWtc640::toString() const
     return utils::format("isReady: {}", isCameraNotReady() ? "N" : "Y");
 }
 
+
+const std::map<AuxilaryPinTriggerMode::Item, EnumValueDeviceDescription> AuxilaryPinTriggerMode::ALL_ITEMS
+{
+    {Item::INTERNAL_TRIGGER,            {"Internal Trigger",            "INTERNAL_TRIGGER",             0}},
+    {Item::EXTERNAL_CONTINUOUS_TRIGGER, {"External Continuous Trigger", "EXTERNAL_CONTINUOUS_TRIGGER",  1}},
+    {Item::EXTERNAL_ONE_SHOT_TRIGGER,   {"External One-Shot Trigger",   "EXTERNAL_ONE_SHOT_TRIGGER",    2}},
+};
+
+const std::map<AuxilaryPinTriggerState::Item, EnumValueDeviceDescription> AuxilaryPinTriggerState::ALL_ITEMS
+{
+    {Item::HIGH_IMPEDANCE,                      {"High Impedance",                   "HIGH_IMPEDANCE",                   0}},
+    {Item::HIGH_LOGIC_LEVEL,                    {"High Logic Level",                 "HIGH_LOGIC_LEVEL",                 1}},
+    {Item::LOW_LOGIC_LEVEL,                     {"Low Logic Level",                  "LOW_LOGIC_LEVEL",                  2}},
+    {Item::INTERNAL_TRIGGER_OUTPUT,             {"Internal Trigger Output",          "INTERNAL_TRIGGER_OUTPUT",          3}},
+    {Item::EXTERNAL_TRIGGER_INPUT,              {"External Trigger Input",           "EXTERNAL_TRIGGER_INPUT",           4}},
+    {Item::NUC_OFFSET_UPDATE_TRIGGER_OUTPUT,    {"NUC Offset Update Trigger Output", "NUC_OFFSET_UPDATE_TRIGGER_OUTPUT", 5}},
+    {Item::NUC_OFFSET_UPDATE_REQUEST_INPUT,     {"NUC Offset Update Request Input",  "NUC_OFFSET_UPDATE_REQUEST_INPUT",  6}},
+};
+
 const std::map<Baudrate::Item, EnumValueDeviceDescription> BaudrateWtc::ALL_ITEMS
 {
     {Item::B_115200,  {utils::format("{}", core::Baudrate::getBaudrateSpeed(Item::B_115200)),  "B_115200",  4}},
@@ -210,13 +229,12 @@ const std::map<ImageGenerator::Item, EnumValueDeviceDescription> ImageGenerator:
 
 const std::map<Plugin::Item, EnumValueDeviceDescription> Plugin::ALL_ITEMS
 {
-    {Item::CMOS,    {"CMOS",   "CMOS",      0b1111}},
     {Item::HDMI,    {"HDMI",   "HDMI",      0b0001}},
-    {Item::ANALOG,  {"Analog", "ANALOG",    0b0011}},
-    {Item::USB,     {"USB",    "USB",       0b1110}},
     {Item::PLEORA,  {"GigE",   "GIGE",      0b0111}},
+    {Item::WTVC,    {"WTVC",   "WTVC",      0b1011}},
+    {Item::USB,     {"USB",    "USB",       0b1110}},
     {Item::CVBS,    {"CVBS",   "CVBS",      0b1011}},
-    {Item::ONVIF,   {"ONVIF",  "ONVIF",     0b0000}},
+    {Item::CMOS,    {"CMOS",   "CMOS",      0b1111}},
 };
 
 const std::map<FirmwareType::Item, EnumValueDeviceDescription> FirmwareType::ALL_ITEMS
@@ -374,15 +392,20 @@ int Range::getUpperTemperature(Item item)
 
 const std::map<Lens::Item, Lens::Description> Lens::ALL_ITEMS
 {
-    {Item::NOT_DEFINED, {"Undefined",     "NOT_DEFINED",    0xF0, "Undefined"}},
-    {Item::WTC_35,      {"35 mm f/1.10",  "WTC_35",         0x00, "L-WTC-35-{}-{}"}},
-    {Item::WTC_25,      {"25 mm f/1.20",  "WTC_25",         0x10, "L-WTC-25-{}-{}"}},
-    {Item::WTC_14,      {"14 mm f/1.20",  "WTC_14",         0x20, "L-WTC-14-{}-{}"}},
-    {Item::WTC_7_5,     {"7.5 mm f/1.20", "WTC_7_5",        0x30, "L-WTC-7-{}-{}"}},
-    {Item::WTC_50,      {"50 mm f/1.20",  "WTC_50",         0x40, "L-WTC-50-{}-{}"}},
-    {Item::WTC_7,       {"7 mm f/1.00",   "WTC_7",          0x50, "L-WTC-7-{}-{}"}},
-    {Item::USER_1,      {"USER 1",        "USER_1",         0x70, "USER 1"}},
-    {Item::USER_2,      {"USER 2",        "USER_2",         0x80, "USER 2"}},
+    {Item::NOT_DEFINED, {"Undefined",             "NOT_DEFINED",    0xF0, "Undefined"}},
+    {Item::WTC_35,      {"35 mm f/1.10",          "WTC_35",         0x00, "L-WTC-35-{}-{}"}},
+    {Item::WTC_25,      {"25 mm f/1.20",          "WTC_25",         0x10, "L-WTC-25-{}-{}"}},
+    {Item::WTC_14,      {"14 mm f/1.20",          "WTC_14",         0x20, "L-WTC-14-{}-{}"}},
+    {Item::WTC_7_5,     {"7.5 mm f/1.20",         "WTC_7_5",        0x30, "L-WTC-7-{}-{}"}},
+    {Item::WTC_50,      {"50 mm f/1.20",          "WTC_50",         0x40, "L-WTC-50-{}-{}"}},
+    {Item::WTC_7,       {"7 mm f/1.00",           "WTC_7",          0x50, "L-WTC-7-{}-{}"}},
+    {Item::WTC_73,      {"73.1 mm f/1.15",        "WTC_73",         0x60, "L-WTC-73-{}-{}"}},
+    {Item::WTC_13,      {"13 mm f/1.00",          "WTC_13",         0x70, "L-WTC-13-{}-{}"}},
+    {Item::WTC_19,      {"19 mm f/1.00",          "WTC_19",         0x80, "L-WTC-19-{}-{}"}},
+    {Item::WTC_60,      {"60 mm f/1.00",          "WTC_60",         0x90, "L-WTC-60-{}-{}"}},
+    {Item::WTC_100,     {"100 mm f/1.00",         "WTC_100",        0xA0, "L-WTC-100-{}-{}"}},
+    {Item::WTC_35_105,  {"35-105 mm f/1.60",      "WTC_35_105",     0xB0, "L-WTC-105-{}-{}"}},
+    {Item::WTC_50_150,  {"50-150 mm f/1.60",      "WTC_50_150",     0xC0, "L-WTC-150-{}-{}"}},
 };
 
 uint32_t Lens::getDeviceValue(const Item item)
@@ -402,19 +425,6 @@ ValueResult<Lens::Item> Lens::getFromDeviceValue(const uint32_t deviceValue)
         }
     }
     return ValueResult<Lens::Item>::createError("Value out of range!", utils::format("value: {}", deviceValue));
-}
-
-bool Lens::isUserDefined(Item item)
-{
-    switch (item)
-    {
-        case Item::USER_1:
-        case Item::USER_2:
-            return true;
-
-        default:
-            return false;
-    }
 }
 
 const std::map<LensVariant::Item, EnumValueDeviceDescription> LensVariant::ALL_ITEMS
@@ -443,6 +453,14 @@ ValueResult<LensVariant::Item> LensVariant::getFromDeviceValue(const uint32_t de
     }
     return ValueResult<LensVariant::Item>::createError("Value out of range!", utils::format("value: {}", deviceValue));
 }
+
+const std::map<OnucState::Item, EnumValueDeviceDescription> OnucState::ALL_ITEMS
+{
+    {Item::OFF,             {"OFF",         "OFF",          0x0}},
+    {Item::ONUC,            {"ONUC",        "ONUC",         0x1}},
+    {Item::SNUC,            {"SNUC",        "SNUC",         0x2}},
+    {Item::AUTO_DETECT,     {"AUTO_DETECT", "AUTO_DETECT",  0x3}},
+};
 
 const std::map<PresetVersion::Item, EnumValueDeviceDescription> PresetVersion::ALL_ITEMS
 {

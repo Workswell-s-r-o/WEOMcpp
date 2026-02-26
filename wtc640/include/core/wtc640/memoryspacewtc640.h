@@ -90,12 +90,20 @@ public:
     static constexpr AddressRange LED_G_BRIGHTNESS_CURRENT       = AddressRange::firstAndSize(0x0168, 4);
     static constexpr AddressRange LED_B_BRIGHTNESS_CURRENT       = AddressRange::firstAndSize(0x016C, 4);
     static constexpr AddressRange LOADER_FIRMWARE_VERSION        = AddressRange::firstAndSize(0x0170, 4);
+    static constexpr AddressRange AUXILARY_TRIGGER_MODE_CURRENT  = AddressRange::firstAndSize(0x0174, 4);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_0_CURRENT  = AddressRange::firstAndSize(0x0178, 4);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_1_CURRENT  = AddressRange::firstAndSize(0x017C, 4);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_2_CURRENT  = AddressRange::firstAndSize(0x0180, 4);
 
     static constexpr AddressRange SERIAL_NUMBER_IN_FLASH          = SERIAL_NUMBER_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
     static constexpr AddressRange ARTICLE_NUMBER_IN_FLASH         = ARTICLE_NUMBER_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
     static constexpr AddressRange LED_R_BRIGHTNESS_IN_FLASH       = LED_R_BRIGHTNESS_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
     static constexpr AddressRange LED_G_BRIGHTNESS_IN_FLASH       = LED_G_BRIGHTNESS_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
     static constexpr AddressRange LED_B_BRIGHTNESS_IN_FLASH       = LED_B_BRIGHTNESS_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
+    static constexpr AddressRange AUXILARY_TRIGGER_MODE_IN_FLASH  = AUXILARY_TRIGGER_MODE_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_0_IN_FLASH = AUXILARY_TRIGGER_PIN_0_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_1_IN_FLASH = AUXILARY_TRIGGER_PIN_1_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
+    static constexpr AddressRange AUXILARY_TRIGGER_PIN_2_IN_FLASH = AUXILARY_TRIGGER_PIN_2_CURRENT.moved(ADDRESS_FLASH_REGISTERS_START);
 
     // Video - 0x02xx
     static constexpr AddressRange PALETTE_INDEX_CURRENT    = AddressRange::firstAndSize(0x0200, 4);
@@ -105,7 +113,7 @@ public:
     static constexpr AddressRange IMAGE_FREEZE                  = AddressRange::firstAndSize(0x020C, 4);
     static constexpr AddressRange VIDEO_FORMAT_CURRENT          = AddressRange::firstAndSize(0x0210, 4);
     static constexpr AddressRange TEST_PATTERN                  = AddressRange::firstAndSize(0x0214, 4);
-    static constexpr AddressRange FPS_LOCK                      = AddressRange::firstAndSize(0x220, 4);
+    static constexpr AddressRange FPS_LOCK                      = AddressRange::firstAndSize(0x0220, 4);
     static constexpr AddressRange RETICLE_MODE_CURRENT          = AddressRange::firstAndSize(0x0234, 4);
     static constexpr AddressRange CROSS_SHIFT_X_AXIS_CURRENT    = AddressRange::firstAndSize(0x0238, 4);
     static constexpr AddressRange CROSS_SHIFT_Y_AXIS_CURRENT    = AddressRange::firstAndSize(0x023C, 4);

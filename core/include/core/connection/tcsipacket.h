@@ -22,15 +22,15 @@ public:
 
     enum class Status : uint8_t
     {
-        OK                   = 0x00,
-        CAMERA_NOT_READY     = 0x01,
-        UNKNOWN_COMMAND      = 0x02,
-        WRONG_CHECKSUM       = 0x03,
-        WRONG_ADDRESS        = 0x04,
-        WRONG_ARGUMENT_COUNT = 0x05,
-        FLASH_BURST_ERROR    = 0x06,
-        INVALID_SETTINGS     = 0x07,
-        INCORRECT_VALUE      = 0x08,
+        OK                    = 0x00,
+        CAMERA_NOT_READY      = 0x01,
+        UNKNOWN_COMMAND       = 0x02,
+        WRONG_CHECKSUM        = 0x03,
+        WRONG_ADDRESS         = 0x04,
+        WRONG_ARGUMENT_COUNT  = 0x05,
+        FLASH_BURST_ERROR     = 0x06,
+        OPERATION_UNAVAILABLE = 0x07,
+        INCORRECT_VALUE       = 0x08,
     };
 
     [[nodiscard]] static TCSIPacket createReadRequest(uint8_t packetId, uint32_t address, uint8_t payloadDataSize);

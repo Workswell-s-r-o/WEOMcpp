@@ -25,7 +25,7 @@ const std::map<TCSIPacket::Status, std::string> TCSIPacket::STATUS_TO_STRING
     {Status::WRONG_ADDRESS, "WRONG ADDRESS"},
     {Status::WRONG_ARGUMENT_COUNT, "WRONG ARGUMENT COUNT"},
     {Status::FLASH_BURST_ERROR, "FLASH BURST ERROR"},
-    {Status::INVALID_SETTINGS, "INVALID SETTINGS"},
+    {Status::OPERATION_UNAVAILABLE, "OPERATION_UNAVAILABLE"},
     {Status::INCORRECT_VALUE, "INCORRECT VALUE"},
 };
 
@@ -220,7 +220,7 @@ const ResultSpecificInfo* TCSIPacket::getInfo(Status status)
         case Status::FLASH_BURST_ERROR:
             return &INFO_TRANSMISSION_FAILED;
 
-        case Status::INVALID_SETTINGS:
+        case Status::OPERATION_UNAVAILABLE:
             return &INFO_INVALID_SETTINGS;
 
         case Status::INCORRECT_VALUE:

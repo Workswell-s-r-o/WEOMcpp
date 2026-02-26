@@ -7,11 +7,10 @@ namespace core
 {
 
 std::vector<PropertyId> PropertyId::m_allPropertyIds {};
-std::map<size_t, PropertyId::PropertyData> PropertyId::m_internalIdToData {};
-std::map<std::string, size_t> PropertyId::m_idStringToInternalId {};
+std::vector<PropertyId::PropertyData> PropertyId::m_allPropertyData {};
+std::unordered_map<std::string, size_t> PropertyId::m_idStringToInternalId {};
 
-PropertyId::PropertyId(size_t internalId) :
-        m_internalId(internalId)
+PropertyId::PropertyId(size_t internalId) : m_internalId(internalId)
 {
 }
 
@@ -20,35 +19,46 @@ size_t PropertyId::getInternalId() const
     return m_internalId;
 }
 
+const PropertyId::PropertyData& PropertyId::getPropertyData() const
+{
+    assert(m_internalId < m_allPropertyIds.size());
+    assert(m_internalId < m_allPropertyData.size());
+    assert(m_internalId == m_allPropertyIds[m_internalId].m_internalId);
+
+    return m_allPropertyData[m_internalId];
+}
+
 const std::string& PropertyId::getIdString() const
 {
-    assert(m_internalIdToData.find(m_internalId) != m_internalIdToData.end());
-
-    return m_internalIdToData.at(m_internalId).idString;
+    return getPropertyData().idString;
 }
 
 const std::string& PropertyId::getInfo() const
 {
-    assert(m_internalIdToData.find(m_internalId) != m_internalIdToData.end());
-
-    return m_internalIdToData.at(m_internalId).info;
+    return getPropertyData().info;
 }
 
-PropertyId PropertyId::createPropertyId(const std::string& idString, const std::string& info)
+const Version& PropertyId::getVersion() const
+{
+    return getPropertyData().version;
+}
+
+PropertyId PropertyId::createPropertyId(const std::string& idString,
+                                        const std::string& info,
+                                        const Version& version)
 {
     assert(!idString.empty());
+    assert(m_allPropertyData.size() == m_allPropertyIds.size());
 
     const auto internalId = m_allPropertyIds.size();
     const PropertyId propertyId(internalId);
 
     assert(!std::binary_search(m_allPropertyIds.begin(), m_allPropertyIds.end(), propertyId));
-    assert(m_internalIdToData.find(internalId) == m_internalIdToData.end());
     assert(m_idStringToInternalId.find(idString) == m_idStringToInternalId.end() && "id string duplicity!");
 
     m_allPropertyIds.push_back(propertyId);
-    std::sort(m_allPropertyIds.begin(), m_allPropertyIds.end());
+    m_allPropertyData.emplace_back(idString, info, version);
 
-    m_internalIdToData.emplace(internalId, PropertyData{idString, info});
     m_idStringToInternalId.emplace(idString, internalId);
 
     return propertyId;
@@ -56,12 +66,12 @@ PropertyId PropertyId::createPropertyId(const std::string& idString, const std::
 
 std::optional<PropertyId> PropertyId::getPropertyIdByInternalId(size_t internalId)
 {
-    const auto it = std::lower_bound(m_allPropertyIds.begin(), m_allPropertyIds.end(), PropertyId(internalId));
-    if (it != m_allPropertyIds.end())
+    if (internalId < m_allPropertyIds.size())
     {
-        return *it;
+        auto propertyId = m_allPropertyIds[internalId];
+        assert(propertyId.m_internalId == internalId);
+        return propertyId;
     }
-
     return std::nullopt;
 }
 
@@ -70,7 +80,7 @@ std::optional<PropertyId> PropertyId::getPropertyIdByIdString(const std::string&
     const auto it = m_idStringToInternalId.find(idString);
     if (it != m_idStringToInternalId.end())
     {
-        return PropertyId(it->second);
+        return getPropertyIdByInternalId(it->second);
     }
     return std::nullopt;
 }

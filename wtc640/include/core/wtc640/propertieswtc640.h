@@ -199,8 +199,9 @@ public:
         PRESETATTRIBUTE_PRESET_ID,
         PRESETATTRIBUTE_GAIN_MATRIX,
         PRESETATTRIBUTE_ONUC_MATRIX,
-        PRESETATTRIBUTE_SNUC_TABLE,
-        PRESETATTRIBUTE__END
+        PRESETATTRIBUTE_SNUC_TABLE = 12,
+        PRESETATTRIBUTE_SNUC_MATRIX,
+        PRESETATTRIBUTE__LAST = PRESETATTRIBUTE_SNUC_MATRIX,
     };
 
     static constexpr int16_t  ONUC_MIN_VALUE = std::numeric_limits<int16_t>::min();
@@ -276,6 +277,14 @@ public:
     [[nodiscard]] VoidResult resetToFactoryDefault(ProgressController progressController);
 
     /**
+     * @brief Sets the admin mode.
+     * @param password The password.
+     * @param progressController The progress controller.
+     * @return A void result.
+     */
+    [[nodiscard]] VoidResult setAdminMode(const std::string& password, ProgressController progressController);
+
+    /**
      * @brief Resets the core implementation.
      * @param trigger The reset trigger.
      * @param taskName The task name.
@@ -323,6 +332,8 @@ public:
      * @return True if the video format is valid, false otherwise.
      */
     [[nodiscard]] static bool isValidVideoFormat(Plugin::Item pluginType, VideoFormat::Item videoFormat);
+    [[nodiscard]] static bool isValidAuxilaryPinState(AuxilaryPinTriggerMode::Item triggerMode, AuxilaryPinTriggerState::Item triggerState);
+    void setOldLoaderUpdateInProgress(bool inProgress);
 
     struct ImageFlip
     {
@@ -459,12 +470,12 @@ private:
     void addDynamicUsbAdapters();
     void addDummyDynamicUsbAdapters();
     [[nodiscard]] VoidResult checkPresetAdapterAddressRange(const connection::AddressRange& addressRange, PropertyId propertyId) const;
-    [[nodiscard]] ValueResult<PresetVersion::Item> getPresetVersion(uint8_t presetIndex);
     template<class T>
     VoidResult addNucMatrixAdapter(PropertyId propertyId, uint32_t address,
                                    const std::string& matrixName,
                                    const std::function<ValueResult<float> (T)>& toFloatFunction,
-                                   const std::function<ValueResult<T> (float)>& fromFloatFunction);
+                                   const std::function<ValueResult<T> (float)>& fromFloatFunction,
+                                   bool skipAddressCheck = false);
 
     VoidResult addSnucMatrixAdapter(PropertyId propertyId, uint32_t address,
                                     const std::string& matrixName);

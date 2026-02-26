@@ -54,10 +54,10 @@ VoidResult FirmwareWtc640::validateForPlugin(Plugin::Item pluginType) const
             return pluginType == Plugin::Item::HDMI ? VoidResult::createOk() : ERROR;
 
         case FirmwareType::Item::ANALOG:
-            return pluginType == Plugin::Item::ANALOG ? VoidResult::createOk() : ERROR;
+            return pluginType == Plugin::Item::CVBS ? VoidResult::createOk() : ERROR;
 
         case FirmwareType::Item::USB:
-            return (pluginType == Plugin::Item::USB || pluginType == Plugin::Item::ONVIF) ? VoidResult::createOk() : ERROR;
+            return pluginType == Plugin::Item::USB ? VoidResult::createOk() : ERROR;
 
         case FirmwareType::Item::ALL:
             return VoidResult::createOk();

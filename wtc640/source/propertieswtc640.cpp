@@ -430,7 +430,6 @@ VoidResult PropertiesWtc640::resetCoreImpl(ResetTrigger::Item trigger, const std
 
         if (const auto resetResult = exclusiveTransaction.activateResetTriggerAndWaitTillFinished(trigger); !resetResult.isOk())
         {
-            task.sendErrorMessage(resetResult.toString());
             return resetResult;
         }
 
@@ -448,7 +447,6 @@ VoidResult PropertiesWtc640::resetCoreImpl(ResetTrigger::Item trigger, const std
 
         if (const auto reconnectResult = stateTransaction->reconnectCoreAfterReset(oldBaudrate); !reconnectResult.isOk())
         {
-            task.sendErrorMessage(reconnectResult.toString());
             return reconnectResult;
         }
 
@@ -489,7 +487,7 @@ VoidResult PropertiesWtc640::updateFirmware(const FirmwareWtc640& firmware, Prog
         const auto trigger = ResetTrigger::Item::STAY_IN_LOADER;
         if(const auto result = resetCoreImpl(trigger, "Resetting loader...", oldBaudrate, progressController, transaction); !result.isOk())
         {
-            progressController.sendErrorMessage(result.toString());
+            return result;
         }
     }
 
@@ -498,9 +496,9 @@ VoidResult PropertiesWtc640::updateFirmware(const FirmwareWtc640& firmware, Prog
 
     if (getCurrentDeviceType(exclusiveTransaction.getPropertiesTransaction()) != DevicesWtc640::LOADER)
     {
-        const auto RESULT = VoidResult::createError("Unable to connect to loader!");
-        progressController.sendErrorMessage(RESULT.toString());
-        return RESULT;
+        const auto result = VoidResult::createError("Unable to connect to loader!");
+        progressController.sendErrorMessage(result.toString());
+        return result;
     }
 
     for(const auto& item : firmware.getUpdateData())
@@ -584,11 +582,7 @@ bool PropertiesWtc640::isValidVideoFormat(Plugin::Item pluginType, VideoFormat::
 
         case Plugin::Item::CVBS:
         case Plugin::Item::HDMI:
-        case Plugin::Item::ANALOG:
             return (videoFormat == VideoFormat::Item::POST_COLORING);
-
-        case Plugin::Item::ONVIF:
-            return (videoFormat == VideoFormat::Item::PRE_IGC);
 
         default:
             assert(false && "unknown firmware!");
@@ -596,6 +590,14 @@ bool PropertiesWtc640::isValidVideoFormat(Plugin::Item pluginType, VideoFormat::
     }
 }
 
+bool PropertiesWtc640::isValidAuxilaryPinState(AuxilaryPinTriggerMode::Item triggerMode, AuxilaryPinTriggerState::Item triggerState)
+{
+    if(triggerMode == AuxilaryPinTriggerMode::Item::INTERNAL_TRIGGER && triggerState == AuxilaryPinTriggerState::Item::EXTERNAL_TRIGGER_INPUT)
+    {
+        return false;
+    }
+    return true;
+}
 void PropertiesWtc640::createAdapters()
 {
     addControlAdapters();
@@ -761,6 +763,60 @@ void PropertiesWtc640::addGeneralAdapters()
     addLedBrightnessAdapters(PropertyIdWtc640::LED_B_BRIGHTNESS_CURRENT, MemorySpaceWtc640::LED_B_BRIGHTNESS_CURRENT,
                              PropertyIdWtc640::LED_B_BRIGHTNESS_IN_FLASH, MemorySpaceWtc640::LED_B_BRIGHTNESS_IN_FLASH,
                              0, 7);
+
+    {
+        const auto addAuxilaryPinAdapter = [this](PropertyId propertyIdCurrent, const AddressRange& addressRangeCurrent,
+                                                  PropertyId propertyIdInFlash, const AddressRange& addressRangeInFlash)
+        {
+            addEnumDeviceValueSimpleAdapter<AuxilaryPinTriggerState>(propertyIdCurrent, addressRangeCurrent,
+                                            DeviceFlags::MAIN_640, ModeFlags::USER, DeviceFlags::MAIN_640, ModeFlags::USER);
+
+            addEnumDeviceValueSimpleAdapter<AuxilaryPinTriggerState>(propertyIdInFlash, addressRangeInFlash,
+                                            DeviceFlags::MAIN_640, ModeFlags::USER, DeviceFlags::MAIN_640, ModeFlags::USER);
+
+            auto triggerModePinStateValidation = [](OptionalResult<AuxilaryPinTriggerMode::Item> triggerMode, OptionalResult<AuxilaryPinTriggerState::Item> pinState)
+            {
+                if(triggerMode.containsValue() && triggerMode.getValue() != AuxilaryPinTriggerMode::Item::INTERNAL_TRIGGER)
+                {
+                    return RankedValidationResult::createOk();
+                }
+
+                if(!triggerMode.containsValue() || !pinState.containsValue())
+                {
+                    return RankedValidationResult::createDataForValidationNotReady(!triggerMode.containsValue() ? "unknown trigger mode!" : "unknown pin state!");
+                }
+
+                if(isValidAuxilaryPinState(triggerMode.getValue(), pinState.getValue()))
+                {
+                    return RankedValidationResult::createOk();
+                }
+                return RankedValidationResult::createError("Invalid trigger mode - pin state combination!", utils::format("trigger mode:{} pin state:{}", AuxilaryPinTriggerMode::ALL_ITEMS.at(triggerMode.getValue()).pythonName, AuxilaryPinTriggerState::ALL_ITEMS.at(pinState.getValue()).pythonName));
+            };
+
+            addPropertyDependencyValidator(std::make_shared<PropertyDependencyValidatorFor2<AuxilaryPinTriggerMode::Item, AuxilaryPinTriggerState::Item>>(
+                core::PropertyIdWtc640::AUXILARY_TRIGGER_MODE_CURRENT, propertyIdCurrent, triggerModePinStateValidation,
+                getPropertyValues(), std::bind(&PropertiesWtc640::getDependencyValidationIgnoreState, this)));
+
+            addPropertyDependencyValidator(std::make_shared<PropertyDependencyValidatorFor2<AuxilaryPinTriggerMode::Item, AuxilaryPinTriggerState::Item>>(
+                core::PropertyIdWtc640::AUXILARY_TRIGGER_MODE_IN_FLASH, propertyIdInFlash, triggerModePinStateValidation,
+                getPropertyValues(), std::bind(&PropertiesWtc640::getDependencyValidationIgnoreState, this)));
+        };
+
+        addEnumDeviceValueSimpleAdapter<AuxilaryPinTriggerMode>(core::PropertyIdWtc640::AUXILARY_TRIGGER_MODE_CURRENT, MemorySpaceWtc640::AUXILARY_TRIGGER_MODE_CURRENT,
+                                                                DeviceFlags::MAIN_640, ModeFlags::USER, DeviceFlags::MAIN_640, ModeFlags::USER);
+
+        addEnumDeviceValueSimpleAdapter<AuxilaryPinTriggerMode>(core::PropertyIdWtc640::AUXILARY_TRIGGER_MODE_IN_FLASH, MemorySpaceWtc640::AUXILARY_TRIGGER_MODE_IN_FLASH,
+                                                                DeviceFlags::MAIN_640, ModeFlags::USER, DeviceFlags::MAIN_640, ModeFlags::USER);
+
+        addAuxilaryPinAdapter(core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_0_CURRENT, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_0_CURRENT,
+                              core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_0_IN_FLASH, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_0_IN_FLASH);
+
+        addAuxilaryPinAdapter(core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_1_CURRENT, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_1_CURRENT,
+                              core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_1_IN_FLASH, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_1_IN_FLASH);
+
+        addAuxilaryPinAdapter(core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_2_CURRENT, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_2_CURRENT,
+                              core::PropertyIdWtc640::AUXILARY_TRIGGER_PIN_2_IN_FLASH, MemorySpaceWtc640::AUXILARY_TRIGGER_PIN_2_IN_FLASH);
+    }
 }
 
 void PropertiesWtc640::addVideoAdapters()
@@ -1526,7 +1582,7 @@ void PropertiesWtc640::addConnectionConstraints()
     auto constraintFuncion = [pluginTypeId](const PropertyValues::Transaction& transaction)
     {
         const auto pluginTypeResult = transaction.getValue<Plugin::Item>(pluginTypeId);
-        if (!pluginTypeResult.containsValue() || pluginTypeResult.getValue() == Plugin::Item::PLEORA || pluginTypeResult.getValue() == Plugin::Item::ONVIF)
+        if (!pluginTypeResult.containsValue() || pluginTypeResult.getValue() == Plugin::Item::PLEORA)
         {
             return PropertyAdapterBase::Status::DISABLED;
         }
@@ -1561,7 +1617,7 @@ void PropertiesWtc640::addPluginConstraints()
     };
     addPropertyConstraints(pluginTypeId, std::move(constraintFuncionCurrentVideoFormat), {PropertyIdWtc640::VIDEO_FORMAT_CURRENT});
 
-    auto constraintFuncionVideoFormatInFlash = [pluginTypeId, this](const PropertyValues::Transaction& transaction)
+    auto constraintFuncionVideoFormatInFlash = [pluginTypeId](const PropertyValues::Transaction& transaction)
     {
         const auto pluginTypeResult = transaction.getValue<Plugin::Item>(pluginTypeId);
         if (!pluginTypeResult.containsValue() || pluginTypeResult.getValue() == Plugin::Item::USB)
@@ -1570,7 +1626,6 @@ void PropertiesWtc640::addPluginConstraints()
         }
         return PropertyAdapterBase::Status::ENABLED_READ_WRITE;
     };
-
     addPropertyConstraints(pluginTypeId, std::move(constraintFuncionVideoFormatInFlash), {PropertyIdWtc640::VIDEO_FORMAT_IN_FLASH});
 
 }
@@ -2052,8 +2107,14 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
 {
     auto selectPresetAttribute = [&](uint8_t presetIndex, PresetAttribute attribute) -> ValueResult<uint32_t>
     {
+        PresetAttribute attributeForDevice = attribute;
+        if (attributeForDevice == PRESETATTRIBUTE_SNUC_MATRIX)
+        {
+            attributeForDevice = PRESETATTRIBUTE_ONUC_MATRIX;
+        }
+
         std::vector<uint8_t> data(4, 0);
-        data.at(0) = attribute;
+        data.at(0) = attributeForDevice;
         data.at(2) = presetIndex;
 
         if (const auto result = deviceInterface->writeTypedData<uint8_t>(data, MemorySpaceWtc640::SELECTED_ATTRIBUTE_AND_PRESET_INDEX.getFirstAddress(), ProgressTask()); !result.isOk())
@@ -2134,7 +2195,7 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
         const auto writer = [addressRange](connection::IDeviceInterface* device, PresetId presetId) -> VoidResult
         {
             std::vector<uint32_t> data(1, 0);
-            data.at(0) = Lens::getDeviceValue(presetId.lens) | LensVariant::getDeviceValue(presetId.lensVariant) | Range::getDeviceValue(presetId.range);
+            data.at(0) = Lens::getDeviceValue(presetId.lens) | LensVariant::getDeviceValue(presetId.lensVariant) | Range::getDeviceValue(presetId.range) | PresetVersion::getDeviceValue(presetId.version);
 
             return device->writeTypedData<uint32_t>(data, addressRange.getFirstAddress(), ProgressTask());
         };
@@ -2233,7 +2294,7 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
                                                    }
 
                                                    return static_cast<int16_t>(resultValue);
-                                               });
+                                               }, true);
                 default:
                     assert(false);
             }
@@ -2257,16 +2318,16 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
         if (m_presetAttributeIds.size() == presetIndex)
         {
             std::map<PresetAttribute, PropertyId> propertyIds;
-            for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute < PRESETATTRIBUTE__END && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
+            for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST; attribute = static_cast<PresetAttribute>(attribute + 1))
             {
                 const auto idString = PropertiesWtc640::getAttributePropertyIdString(presetIndex, attribute);
-                propertyIds.emplace(attribute, PropertyId::createPropertyId(idString, ""));
+                propertyIds.emplace(attribute, PropertyId::createPropertyId(idString, "", Version{0, 0, 0}));
             }
 
             m_presetAttributeIds.push_back(propertyIds);
         }
 
-        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute < PRESETATTRIBUTE__END && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
+        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
         {
             const auto result = addPresetAdapter(presetIndex, attribute, presetsCount);
             if (!result.isOk())
@@ -2306,20 +2367,36 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
             return PropertyAdapterBase::Status::DISABLED;
         };
 
+        auto enableOnucTablePresetVersionConstraintFunction = [propertyPresetId](const PropertyValues::Transaction& transaction)
+        {
+            const auto presetId = transaction.getValue<PresetId>(propertyPresetId);
+            if (presetId.containsValue() && presetId.getValue().isDefined() && presetId.getValue().version == PresetVersion::Item::PRESET_VERSION_WITH_ONUC)
+            {
+                return PropertyAdapterBase::Status::ENABLED_READ_WRITE;
+            }
+
+            return PropertyAdapterBase::Status::DISABLED;
+        };
 
 
-        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute < PRESETATTRIBUTE__END && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
+        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
         {
             if (attribute != PRESETATTRIBUTE_PRESET_ID)
             {
+                assert(m_presetAttributeIds.size() > presetIndex);
+                assert(m_presetAttributeIds.at(presetIndex).size() >= attributesCount);
                 const auto propertyId = m_presetAttributeIds.at(presetIndex).at(attribute);
                 if (getPropertyAdapters().count(propertyId))
                 {
                     const auto adapter = getPropertyAdapters().at(propertyId);
 
-                    if (attribute == PRESETATTRIBUTE_SNUC_TABLE)
+                    if (attribute == PRESETATTRIBUTE_SNUC_MATRIX)
                     {
                         adapter->setStatusConstraintByValuesFunction(enableSnucTablePresetVersionConstraintFunction, { presetIdAdapter }, getPropertyValues().get());
+                    }
+                    else if (attribute == PRESETATTRIBUTE_ONUC_MATRIX)
+                    {
+                        adapter->setStatusConstraintByValuesFunction(enableOnucTablePresetVersionConstraintFunction, { presetIdAdapter }, getPropertyValues().get());
                     }
                     else
                     {
@@ -2376,12 +2453,16 @@ template<class T>
 VoidResult PropertiesWtc640::addNucMatrixAdapter(PropertyId propertyId, uint32_t address,
                                                  const std::string& matrixName,
                                                  const std::function<ValueResult<float> (T)>& toFloatFunction,
-                                                 const std::function<ValueResult<T> (float)>& fromFloatFunction)
+                                                 const std::function<ValueResult<T> (float)>& fromFloatFunction,
+                                                 bool skipAddressCheck)
 {
     const auto addressRange = connection::AddressRange::firstAndSize(address, MemorySpaceWtc640::PRESET_MATRIX_SIZE);
-    if (const auto result = checkPresetAdapterAddressRange(addressRange, propertyId); !result.isOk())
+    if (!skipAddressCheck)
     {
-        return result;
+        if (const auto result = checkPresetAdapterAddressRange(addressRange, propertyId); !result.isOk())
+        {
+            return result;
+        }
     }
 
     const auto reader = [addressRange, matrixName, toFloatFunction](connection::IDeviceInterface* device, ProgressController progressController) -> ValueResult<NucMatrix>
@@ -3344,6 +3425,7 @@ ValueResult<boost::posix_time::ptime> PropertiesWtc640::getDateFromSerialNumber(
     {
         return ValueResult<boost::posix_time::ptime>::createError("Invalid date!", "year is not a number");
     }
+    const int yearInt = std::stoi(year);
 
     if (!std::all_of(month.begin(), month.end(), ::isdigit))
     {
@@ -3356,14 +3438,7 @@ ValueResult<boost::posix_time::ptime> PropertiesWtc640::getDateFromSerialNumber(
         return ValueResult<boost::posix_time::ptime>::createError("Invalid date!", "month is out of range");
     }
 
-    const auto dateString = utils::format("20{}01{}", year, month);
-    auto date = boost::gregorian::from_undelimited_string(dateString);
-    if (date.is_not_a_date())
-    {
-        return ValueResult<boost::posix_time::ptime>::createError("Invalid date!", dateString);
-    }
-
-    boost::posix_time::ptime date2(date);
+    boost::posix_time::ptime date2(boost::gregorian::date(2000 + yearInt, monthInt, 1));
     return date2;
 }
 
@@ -3409,6 +3484,9 @@ std::string PropertiesWtc640::getAttributePropertyIdString(unsigned int presetIn
 
         case PRESETATTRIBUTE_SNUC_TABLE:
             return utils::format("PRESET_{}_SNUC_TABLE", presetIndex + 1);
+
+        case PRESETATTRIBUTE_SNUC_MATRIX:
+            return utils::format("PRESET_{}_SNUC_MATRIX", presetIndex + 1);
 
         default:
             assert(false);
@@ -3485,9 +3563,14 @@ VoidResult PropertiesWtc640::ConnectionStateTransaction::connectUart(const core:
 
 VoidResult PropertiesWtc640::ConnectionStateTransaction::connectUartAuto(const std::vector<core::connection::SerialPortInfo>& ports, ProgressController progressController) const
 {
+#if defined(__APPLE__)
+    static constexpr std::string_view ERROR_CONNECT_FAILED = "Connect failed.\nPlease check the connection and reset the camera to default settings by holding the reset button.";
+    static constexpr std::string_view ERROR_ANY_PORT = "Error, unable to connect to any port.\nPlease check the connection and reset the camera to default settings by holding the reset button.";
+#else
     static constexpr std::string_view ERROR_CONNECT_FAILED = "Connect failed.";
-    static constexpr std::string_view ERROR_NO_PORTS = "Error, no ports available.";
     static constexpr std::string_view ERROR_ANY_PORT = "Error, unable to connect to any port.";
+#endif
+    static constexpr std::string_view ERROR_NO_PORTS = "Error, no ports available.";
 
     auto task = progressController.createTaskUnbound("Connecting to UART port(s).", true);
 

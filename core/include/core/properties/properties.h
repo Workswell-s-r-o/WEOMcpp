@@ -197,6 +197,8 @@ public:
     // if propertyValue != nullopt => refreshValue()
     void invalidateValue(PropertyId propertyId) const;
 
+    void refreshStatus(PropertyId propertyId) const;
+
     [[nodiscard]] bool hasValueResult(PropertyId propertyId) const;
     [[nodiscard]] VoidResult getPropertyValidationResult(PropertyId propertyId) const;
     [[nodiscard]] bool areValuesEqual(PropertyId propertyId1, PropertyId propertyId2) const;
@@ -212,6 +214,7 @@ public:
 
     [[nodiscard]] std::string getValueAsString(PropertyId propertyId) const;
 
+    // calls touch() and then returns the value
     template<class ValueType>
     [[nodiscard]] OptionalResult<ValueType> getValue(PropertyId propertyId) const;
 
