@@ -2312,13 +2312,21 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
     }
     const uint8_t attributesCount = countData.at(0);
     const uint8_t presetsCount = countData.at(2);
+    static const std::array<PresetAttribute, 4> supportedPresetAttributes
+    {
+        PRESETATTRIBUTE_TIMESTAMP,
+        PRESETATTRIBUTE_PRESET_ID,
+        PRESETATTRIBUTE_GAIN_MATRIX,
+        PRESETATTRIBUTE_ONUC_MATRIX,
+    };
+    const auto activeAttributesCount = std::min<size_t>(attributesCount, supportedPresetAttributes.size());
 
     auto addPresetPropertiesAndAdapters = [&](uint8_t presetIndex)
     {
         if (m_presetAttributeIds.size() == presetIndex)
         {
             std::map<PresetAttribute, PropertyId> propertyIds;
-            for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST; attribute = static_cast<PresetAttribute>(attribute + 1))
+            for (const auto attribute : supportedPresetAttributes)
             {
                 const auto idString = PropertiesWtc640::getAttributePropertyIdString(presetIndex, attribute);
                 propertyIds.emplace(attribute, PropertyId::createPropertyId(idString, "", Version{0, 0, 0}));
@@ -2327,8 +2335,9 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
             m_presetAttributeIds.push_back(propertyIds);
         }
 
-        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
+        for (size_t attributeIndex = 0; attributeIndex < activeAttributesCount; ++attributeIndex)
         {
+            const auto attribute = supportedPresetAttributes.at(attributeIndex);
             const auto result = addPresetAdapter(presetIndex, attribute, presetsCount);
             if (!result.isOk())
             {
@@ -2379,12 +2388,13 @@ void PropertiesWtc640::addDynamicPresetAdapters(connection::DeviceInterfaceWtc64
         };
 
 
-        for (PresetAttribute attribute = PRESETATTRIBUTE__BEGIN; attribute <= PRESETATTRIBUTE__LAST && (attribute - PRESETATTRIBUTE__BEGIN) < attributesCount; attribute = static_cast<PresetAttribute>(attribute + 1))
+        for (size_t attributeIndex = 0; attributeIndex < activeAttributesCount; ++attributeIndex)
         {
+            const auto attribute = supportedPresetAttributes.at(attributeIndex);
             if (attribute != PRESETATTRIBUTE_PRESET_ID)
             {
                 assert(m_presetAttributeIds.size() > presetIndex);
-                assert(m_presetAttributeIds.at(presetIndex).size() >= attributesCount);
+                assert(m_presetAttributeIds.at(presetIndex).size() >= activeAttributesCount);
                 const auto propertyId = m_presetAttributeIds.at(presetIndex).at(attribute);
                 if (getPropertyAdapters().count(propertyId))
                 {
