@@ -32,7 +32,7 @@ If you are using Conan, the dependencies will be fetched automatically when you 
 
 2.  Run CMake to configure the project:
     ```sh
-    cmake ..\thermal-core -DW_BUILD_EXAMPLE:BOOL=ON -DW_CORE_BUILD_WTC640:BOOL=ON -DCMAKE_BUILD_TYPE=Release
+    cmake .. -DW_BUILD_EXAMPLE:BOOL=ON -DW_CORE_BUILD_WTC640:BOOL=ON -DCMAKE_BUILD_TYPE=Release
     ```
     
     Optionally if you want to use conan as a package manager make sure to add 

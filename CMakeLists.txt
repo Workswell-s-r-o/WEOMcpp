@@ -5,7 +5,7 @@ option(W_CORE_BUILD_WITH_EBUS "Build thermal-core with eBus support" OFF)
 option(W_DEBUG_SYMBOLS_IN_RELEASE "Build with debug symbols in release for debugging" OFF)
 option(W_BUILD_DEPENDENCIES_WITH_CONAN "Build dependencies using conan" OFF)
 option(W_BUILD_EXAMPLE "Build example" OFF)
-option(W_BUILD_TEST "Build test" ON)
+option(W_BUILD_TEST "Build test" OFF)
 
 project(ThermalCore LANGUAGES CXX)
 
